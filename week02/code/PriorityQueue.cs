@@ -22,17 +22,40 @@
             throw new InvalidOperationException("The queue is empty.");
         }
 
-        // Find the index of the item with the highest priority to remove
+         // Find the index of the item with the highest priority to remove
         var highPriorityIndex = 0;
-        for (int index = 1; index < _queue.Count - 1; index++)
+
+        for (int index = 1; index < _queue.Count; index++)
         {
-            if (_queue[index].Priority >= _queue[highPriorityIndex].Priority)
+            // The condition should be strictly greater (>) to ensure FIFO for ties.
+            // If it's '>=', and a later item has the same priority, highPriorityIndex would update,
+            // violating the "closest to the front" rule.
+            if (_queue[index].Priority > _queue[highPriorityIndex].Priority)
+            {
                 highPriorityIndex = index;
+            }
         }
 
-        // Remove and return the item with the highest priority
+        // Store the value of the item with the highest priority
         var value = _queue[highPriorityIndex].Value;
+
+        // Remove the item from the queue
+        _queue.RemoveAt(highPriorityIndex);
         return value;
+    }
+
+/// <summary>
+    /// Gets the current number of items in the queue.
+    /// </summary>
+    public int Count => _queue.Count;
+
+    /// <summary>
+    /// Checks if the queue is empty.
+    /// </summary>
+    /// <returns>True if the queue is empty, false otherwise.</returns>
+    public bool IsEmpty()
+    {
+        return _queue.Count == 0;
     }
 
     public override string ToString()
