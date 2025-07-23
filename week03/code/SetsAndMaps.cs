@@ -1,4 +1,12 @@
+
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Text.Json;
+using System.Net.Http;
+using System.Threading.Tasks; // Required for HttpClient, even if not directly using async/await in EarthquakeDailySummary
+
 
 public static class SetsAndMaps
 {
@@ -22,7 +30,49 @@ public static class SetsAndMaps
     public static string[] FindPairs(string[] words)
     {
         // TODO Problem 1 - ADD YOUR CODE HERE
-        return [];
+        // Use a HashSet for O(1) average time complexity for lookups, additions, and removals.
+        var wordSet = new HashSet<string>(words);
+        var resultPairs = new List<string>();
+
+        foreach (var word in words)
+        {
+            // Check if the word is still in the set.
+            // It might have been removed if it formed a pair with a word processed earlier.
+            if (wordSet.Contains(word))
+            {
+                // Reverse the word
+                char[] charArray = word.ToCharArray();
+                Array.Reverse(charArray);
+                string reversedWord = new string(charArray);
+
+                // Special case: if letters are the same (e.g., "aa"), it's not a symmetric pair for this problem.
+                // Also, ensure the reversed word is actually different from the original word.
+                // Then, check if the reversed word exists in the set.
+                if (word != reversedWord && wordSet.Contains(reversedWord))
+                {
+                    // To ensure consistent output order for tests (e.g., "ma & am" vs "am & ma"),
+                    // we'll always put the lexicographically larger word first in the pair string.
+                    if (string.Compare(word, reversedWord, StringComparison.Ordinal) > 0)
+                    {
+                        resultPairs.Add($"{word} & {reversedWord}");
+                    }
+                    else
+                    {
+                        resultPairs.Add($"{reversedWord} & {word}");
+                    }
+
+                    // Remove both words from the set to ensure they are not processed again
+                    // and to maintain O(n) complexity by not re-evaluating already found pairs.
+                    wordSet.Remove(word);
+                    wordSet.Remove(reversedWord);
+                }
+            }
+        }
+
+        return resultPairs.ToArray();
+
+
+
     }
 
     /// <summary>
@@ -39,10 +89,40 @@ public static class SetsAndMaps
     public static Dictionary<string, int> SummarizeDegrees(string filename)
     {
         var degrees = new Dictionary<string, int>();
-        foreach (var line in File.ReadLines(filename))
+        try
         {
-            var fields = line.Split(",");
-            // TODO Problem 2 - ADD YOUR CODE HERE
+            foreach (var line in File.ReadLines(filename))
+            {
+                // Split the line by comma as indicated by the test file's structure
+                var fields = line.Split(',');
+
+                // Check if the line has at least 4 columns (0-indexed: index 3)
+                if (fields.Length > 3)
+                {
+                    string degree = fields[3].Trim(); // Get the degree and trim whitespace
+
+                    if (!string.IsNullOrEmpty(degree))
+                    {
+                        // Increment count if degree exists, otherwise add with count 1
+                        if (degrees.ContainsKey(degree))
+                        {
+                            degrees[degree]++;
+                        }
+                        else
+                        {
+                            degrees[degree] = 1;
+                        }
+                    }
+                }
+            }
+        }
+        catch (FileNotFoundException)
+        {
+            Console.WriteLine($"Error: File not found at {filename}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred while reading the file: {ex.Message}");
         }
 
         return degrees;
@@ -66,8 +146,56 @@ public static class SetsAndMaps
     /// </summary>
     public static bool IsAnagram(string word1, string word2)
     {
-        // TODO Problem 3 - ADD YOUR CODE HERE
-        return false;
+        // Normalize words: convert to lowercase and remove spaces
+        string normalizedWord1 = new string(word1.Where(c => !char.IsWhiteSpace(c)).ToArray()).ToLower();
+        string normalizedWord2 = new string(word2.Where(c => !char.IsWhiteSpace(c)).ToArray()).ToLower();
+
+        // If lengths are different after normalization, they cannot be anagrams
+        if (normalizedWord1.Length != normalizedWord2.Length)
+        {
+            return false;
+        }
+
+        // Use a dictionary to store character counts for the first word
+        var charCounts = new Dictionary<char, int>();
+
+        foreach (char c in normalizedWord1)
+        {
+            if (charCounts.ContainsKey(c))
+            {
+                charCounts[c]++;
+            }
+            else
+            {
+                charCounts[c] = 1;
+            }
+        }
+
+        // Iterate through the second word and adjust counts
+        foreach (char c in normalizedWord2)
+        {
+            if (charCounts.ContainsKey(c))
+            {
+                charCounts[c]--;
+            }
+            else
+            {
+                // Character from word2 not found in word1's counts
+                return false;
+            }
+        }
+
+        // Finally, check if all counts in the dictionary are zero
+        // If any count is not zero, it means the character counts don't match
+        foreach (var count in charCounts.Values)
+        {
+            if (count != 0)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /// <summary>
@@ -89,18 +217,51 @@ public static class SetsAndMaps
         const string uri = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson";
         using var client = new HttpClient();
         using var getRequestMessage = new HttpRequestMessage(HttpMethod.Get, uri);
-        using var jsonStream = client.Send(getRequestMessage).Content.ReadAsStream();
-        using var reader = new StreamReader(jsonStream);
-        var json = reader.ReadToEnd();
-        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
 
-        var featureCollection = JsonSerializer.Deserialize<FeatureCollection>(json, options);
+        try
+        {
+            using var jsonStream = client.Send(getRequestMessage).Content.ReadAsStream();
+            using var reader = new StreamReader(jsonStream);
+            var json = reader.ReadToEnd();
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
 
-        // TODO Problem 5:
-        // 1. Add code in FeatureCollection.cs to describe the JSON using classes and properties 
-        // on those classes so that the call to Deserialize above works properly.
-        // 2. Add code below to create a string out each place a earthquake has happened today and its magitude.
-        // 3. Return an array of these string descriptions.
-        return [];
+            var featureCollection = JsonSerializer.Deserialize<FeatureCollection>(json, options);
+
+            // TODO Problem 5:
+            // 1. Add code in FeatureCollection.cs to describe the JSON using classes and properties 
+            // on those classes so that the call to Deserialize above works properly.
+            // 2. Add code below to create a string out each place a earthquake has happened today and its magitude.
+            // 3. Return an array of these string descriptions.
+
+            // Check if features are null or empty
+            if (featureCollection?.Features == null || featureCollection.Features.Length == 0)
+            {
+                return new string[] { "No earthquake data found for today." };
+            }
+
+            // Create a string out of each place an earthquake has happened today and its magnitude.
+            // Return an array of these string descriptions.
+            var formattedStrings = featureCollection.Features
+                .Select(f => $"{f.Properties.Place} - Mag {f.Properties.Mag:F2}") // Format magnitude to 2 decimal places
+                .ToArray();
+
+            return formattedStrings;
+
+        }
+        catch (HttpRequestException e)
+        {
+            // Handle HTTP errors (e.g., network issues, 404, 500)
+            return new string[] { $"Error fetching data: {e.Message}. Please check your internet connection or the API URL." };
+        }
+        catch (JsonException e)
+        {
+            // Handle JSON deserialization errors
+            return new string[] { $"Error deserializing JSON: {e.Message}. The data format might have changed." };
+        }
+        catch (Exception e)
+        {
+            // Catch any other unexpected errors
+            return new string[] { $"An unexpected error occurred: {e.Message}" };
+        }
     }
 }

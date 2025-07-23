@@ -19,10 +19,15 @@ public class Maze
     private readonly Dictionary<ValueTuple<int, int>, bool[]> _mazeMap;
     private int _currX = 1;
     private int _currY = 1;
+    private ValueTuple<int, int> _currentPosition; // Track the current position
+
 
     public Maze(Dictionary<ValueTuple<int, int>, bool[]> mazeMap)
     {
-        _mazeMap = mazeMap;
+        _mazeMap = mazeMap ?? throw new ArgumentNullException(nameof(mazeMap));;
+
+        
+        _currentPosition = (_currX, _currY); // Starting position as per test
     }
 
     // TODO Problem 4 - ADD YOUR CODE HERE
@@ -32,7 +37,11 @@ public class Maze
     /// </summary>
     public void MoveLeft()
     {
-        // FILL IN CODE
+          if (!_mazeMap.TryGetValue(_currentPosition, out var movements) || !movements[0]) // movements[0] is 'left'
+        {
+            throw new InvalidOperationException("Can't go that way!");
+        }
+        _currentPosition = (_currentPosition.Item1 - 1, _currentPosition.Item2);
     }
 
     /// <summary>
@@ -41,7 +50,11 @@ public class Maze
     /// </summary>
     public void MoveRight()
     {
-        // FILL IN CODE
+         if (!_mazeMap.TryGetValue(_currentPosition, out var movements) || !movements[1]) // movements[1] is 'right'
+        {
+            throw new InvalidOperationException("Can't go that way!");
+        }
+        _currentPosition = (_currentPosition.Item1 + 1, _currentPosition.Item2);
     }
 
     /// <summary>
@@ -50,7 +63,11 @@ public class Maze
     /// </summary>
     public void MoveUp()
     {
-        // FILL IN CODE
+        if (!_mazeMap.TryGetValue(_currentPosition, out var movements) || !movements[2]) // movements[2] is 'up'
+        {
+            throw new InvalidOperationException("Can't go that way!");
+        }
+        _currentPosition = (_currentPosition.Item1, _currentPosition.Item2 + 1);
     }
 
     /// <summary>
@@ -59,7 +76,11 @@ public class Maze
     /// </summary>
     public void MoveDown()
     {
-        // FILL IN CODE
+      if (!_mazeMap.TryGetValue(_currentPosition, out var movements) || !movements[3]) // movements[3] is 'down'
+        {
+            throw new InvalidOperationException("Can't go that way!");
+        }
+        _currentPosition = (_currentPosition.Item1, _currentPosition.Item2 - 1);
     }
 
     public string GetStatus()
