@@ -14,8 +14,14 @@ public static class Recursion
     /// </summary>
     public static int SumSquaresRecursive(int n)
     {
-        // TODO Start Problem 1
-        return 0;
+          // Base case: If n is 0 or less, the sum is 0.
+        if (n <= 0)
+        {
+            return 0;
+        }
+
+        // Recursive step: Return the square of n plus the sum of squares up to n-1.
+        return n * n + SumSquaresRecursive(n - 1);
     }
 
     /// <summary>
@@ -40,6 +46,40 @@ public static class Recursion
     public static void PermutationsChoose(List<string> results, string letters, int size, string word = "")
     {
         // TODO Start Problem 2
+         // Start the recursive generation with an empty current permutation.
+        GeneratePermutations(letters, size, results, new bool[letters.Length], "");
+    }
+
+     /// <summary>
+    /// A private recursive helper function that generates permutations using backtracking.
+    /// It builds the permutation string one character at a time.
+    /// </summary>
+    private void GeneratePermutations(char[] letters, int size, List<string> results, bool[] used, string current)
+    {
+        // Base case: If the current permutation has reached the desired size,
+        // it's a valid result. Add it to the results list and stop this path.
+        if (current.Length == size)
+        {
+            results.Add(current);
+            return;
+        }
+
+        // Recursive step: Iterate through the available letters.
+        for (int i = 0; i < letters.Length; i++)
+        {
+            // If the letter at the current index has not been used in this permutation, proceed.
+            if (!used[i])
+            {
+                // 1. Mark the letter as used.
+                used[i] = true;
+
+                // 2. Make a recursive call with the new letter added to the current permutation.
+                GeneratePermutations(letters, size, results, used, current + letters[i]);
+
+                // 3. Backtrack: Unmark the letter as used to allow other paths to use it.
+                used[i] = false;
+            }
+        }
     }
 
     /// <summary>
@@ -97,10 +137,22 @@ public static class Recursion
             return 4;
 
         // TODO Start Problem 3
+          // Memoization check: If we have already computed the result for 's', return it.
+        if (remember.ContainsKey(s))
+        {
+            return remember[s];
+        }
 
-        // Solve using recursion
-        decimal ways = CountWaysToClimb(s - 1) + CountWaysToClimb(s - 2) + CountWaysToClimb(s - 3);
+        // Recursive step: Sum the ways to climb from s-1, s-2, and s-3 stairs.
+        int ways = CountWaysToClimb(s - 1, remember) +
+                   CountWaysToClimb(s - 2, remember) +
+                   CountWaysToClimb(s - 3, remember);
+        
+        // Store the computed result in the memoization dictionary before returning.
+        remember[s] = ways;
         return ways;
+        // Solve using recursion
+        
     }
 
     /// <summary>
@@ -118,7 +170,22 @@ public static class Recursion
     /// </summary>
     public static void WildcardBinary(string pattern, List<string> results)
     {
-        // TODO Start Problem 4
+       // Find the index of the first wildcard character.
+        int wildcardIndex = pattern.IndexOf('*');
+
+        // Base case: If no wildcard is found, the pattern is a complete binary string.
+        if (wildcardIndex == -1)
+        {
+            results.Add(pattern);
+            return;
+        }
+
+        // Recursive step: Replace the first wildcard with '0' and '1' and recurse.
+        string patternWithZero = pattern.Substring(0, wildcardIndex) + '0' + pattern.Substring(wildcardIndex + 1);
+        string patternWithOne = pattern.Substring(0, wildcardIndex) + '1' + pattern.Substring(wildcardIndex + 1);
+
+        WildcardBinary(patternWithZero, results);
+        WildcardBinary(patternWithOne, results);
     }
 
     /// <summary>
@@ -136,6 +203,26 @@ public static class Recursion
         // currPath.Add((1,2)); // Use this syntax to add to the current path
 
         // TODO Start Problem 5
+         // Check boundaries
+        int n = maze.GetLength(0);
+        if (x < 0 || x >= n || y < 0 || y >= n)
+        {
+            return false;
+        }
+
+        // Check for walls
+        if (maze[y, x] == 0)
+        {
+            return false;
+        }
+
+        // Check if we have already been at this location in the current path.
+        if (currPath.Contains((x, y)))
+        {
+            return false;
+        }
+
+        return true;
         // ADD CODE HERE
 
         // results.Add(currPath.AsString()); // Use this to add your path to the results array keeping track of complete maze solutions when you find the solution.
