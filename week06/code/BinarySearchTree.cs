@@ -81,6 +81,28 @@ public class BinarySearchTree : IEnumerable<int>
     private void TraverseBackward(Node? node, List<int> values)
     {
         // TODO Problem 3
+         if (node is null)
+        {
+            yield break;
+        }
+
+        if (node.Left is not null)
+        {
+            foreach (var item in TraverseForward(node.Left))
+            {
+                yield return item;
+            }
+        }
+        
+        yield return node.Data;
+
+        if (node.Right is not null)
+        {
+            foreach (var item in TraverseForward(node.Right))
+            {
+                yield return item;
+            }
+        }
     }
 
     /// <summary>
